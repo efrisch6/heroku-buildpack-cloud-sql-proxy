@@ -1,5 +1,3 @@
-#!/bin/sh
-
 set -e
 
 BUILD_DIR=$1
@@ -24,11 +22,17 @@ if [ ! -d $BUILD_DIR/bin ]; then
 	mkdir $BUILD_DIR/bin
 fi
 
+if [ -f $ENV_DIR/GSP_CREDENTIALS ]; then
+	echo "-----> Adding credentials JSON"
+	cp $ENV_DIR/GSP_CREDENTIALS $BUILD_DIR/google/credentials.json
+fi
+
+# echo "-----> Create socket dir"
+# mkdir -p /cloudsql
+
 cat >$BUILD_DIR/bin/run_cloud_sql_proxy <<EOF
 #!/bin/sh
-echo "-----> Adding credentials JSON"
-printf "%s" "\$GCLOUD_CREDENTIALS" | base64 --decode > /app/google/credentials.json
-exec /app/google/bin/cloud_sql_proxy -credential_file=\$GCLOUD_CREDENTIALS -instances=\$GCLOUD_INSTANCE -h 127.0.0.1 -dir=/tmp &
+exec /app/google/bin/cloud_sql_proxy -credential_file=/app/google/credentials.json -instances=\$GSP_INSTANCES -dir=/tmp &
 EOF
 chmod +x $BUILD_DIR/bin/run_cloud_sql_proxy
 
